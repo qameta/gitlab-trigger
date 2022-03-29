@@ -1,0 +1,36 @@
+name: "Gitlab Trigger Action"
+description: "Triggers Gitlab pipeline with envs"
+inputs:
+  token:
+    description: "Gitlab token"
+    required: true
+  projectId:
+    description: "Project ID where your Gitlab CI Pipeline awaits"
+    required: true
+  endpoint:
+    description: "Gitlab endpoint (defaults to Official Gitlab Endpoint)"
+    default: "https://gitlab.com"
+    required: false
+  ref:
+    description: "Git branch of target pipeline"
+    default: "master"
+    required: false
+  envs:
+    description: "Environment variables separated with , without spaces (e.g. VERSION=1.1.2,ARCH=amd64)"
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Download gl cli util
+      shell: bash
+      run: |
+        echo "Downloading and installing dependencies"
+        curl https://dl.qameta.io/artifactory/bin/gitlab/gl -o gl && \
+        chmod +x gl && \
+        mv gl /usr/local/bin
+    - name: Authorizing in Gitlab
+      shell: bash
+      run: gl auth login --token=${{ inputs.token }} --project-id=${{ inputs.projectId }} --endpoint=${{ inputs.endpoint }}
+    - name: Triggering Gitlab Pipeline
+      shell: bash
+      run: gl pipeline run --ref=${{ inputs.ref }} --env=${{ inputs.envs }}
